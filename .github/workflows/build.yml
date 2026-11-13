@@ -15,11 +15,15 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - uses: android-actions/setup-android@v3
-
+      # GitHub's ubuntu runner ships an Android SDK; don't use android-actions/setup-android
+      # (it still invokes the removed "sdkmanager tools" package and fails).
       - name: Install Android SDK packages
         run: |
-          sdkmanager --install "platforms;android-34" "build-tools;35.0.0"
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SDKMANAGER" ] || SDKMANAGER=$(command -v sdkmanager)
+          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+          "$SDKMANAGER" --install "platforms;android-34" "build-tools;35.0.0"
           sudo apt-get update
           sudo apt-get install -y zip unzip curl
 
