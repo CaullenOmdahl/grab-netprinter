@@ -4,7 +4,7 @@
 set -uo pipefail
 
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-SERIAL=${SERIAL:-192.168.1.100}
+SERIAL=${SERIAL:-}
 REMOTE=/data/local/tmp/gnp
 KSUD=/data/adb/ksud
 

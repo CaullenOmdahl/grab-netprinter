@@ -3,7 +3,7 @@
 # by editing LSPosed's SQLite config directly. This is the reliable fallback when the
 # parasitic LSPosed manager cannot be opened on an Android-x86 build.
 #
-# Validated on the POS 2026-11-13 (Bliss 17.2 / Android 14 / LSPosed v1.11.0).
+# Validated on Android 14 with LSPosed v1.11.0.
 # Requires a REBOOT afterwards (the LSPosed daemon loads the config at startup).
 #
 #   deploy/enable-scope.sh [--serial host:port] [--target com.grab.merchant] [--no-reboot]

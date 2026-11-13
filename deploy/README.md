@@ -1,7 +1,7 @@
 # Deploy scripts
 
-Run from the repo root. The POS defaults to `192.168.1.100`; override with
-`--serial host:port` or `SERIAL=...`.
+Run from the repo root. Pass the device endpoint with `--serial host:port` or `SERIAL=...`
+(e.g. `SERIAL=192.168.1.100:5555 deploy/verify.sh`).
 
 | Script | Purpose | Changes device? |
 |---|---|---|

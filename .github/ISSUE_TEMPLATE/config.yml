@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/CaullenOmdahl/grab-netprinter#readme
+    about: Installation, configuration, limitations and troubleshooting.
+  - name: Security report
+    url: https://github.com/CaullenOmdahl/grab-netprinter/security/advisories/new
+    about: Please report vulnerabilities privately, not as public issues.

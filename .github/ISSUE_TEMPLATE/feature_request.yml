@@ -1,0 +1,24 @@
+name: Feature request
+description: Suggest an improvement or a new target app/printer
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+  - type: input
+    id: app
+    attributes:
+      label: POS app / printer involved (if relevant)
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - label: This keeps the module generic (framework-level hooks) rather than app-specific hacks.
