@@ -136,7 +136,7 @@ The same quirk is why `deploy/install.sh` installs the Zygisk provider alone bef
 - Check `logcat -d | grep -iE 'zygisk|lsposed'`.
 - Verify the zips you installed are the x86_64-capable ones pinned in `vendor/` (see
   [compat.md](compat.md)). A wrong-architecture module silently does nothing.
-- **ZygiskNext/NeoZygisk abort at install** if `ksud sepolicy check` fails on this non-GKI Bliss
+- **ZygiskNext/NeoZygisk abort at install** if `ksud sepolicy check` fails on a non-GKI vendor
   kernel (SELinux permissive does not prevent the installer's explicit check). Do not force it;
   read the install output, try the other Zygisk provider (`vendor/neozygisk-v2.4.zip`, same module
   id — uninstall/disable ZygiskNext first), or report the check output as a bug.
@@ -161,7 +161,7 @@ If the POS boot-loops or the desktop does not come up:
    for d in /data/adb/modules/*/; do touch "${d}disable"; done   # disable all modules
    adb reboot
    ```
-2. **No ADB:** boot the POS from a Linux/Bliss live USB, mount the data partition and create
+2. **No ADB:** boot the device from a Linux live USB, mount the data partition and create
    `/data/adb/modules/<id>/disable` for `zygisknext`, `lsposed` (and optionally
    `grab-netprinter`), then unmount and reboot. This image's `/data` is not encrypted by default.
 3. **KernelSU Manager from another profile:** if the system boots, open KernelSU Manager and

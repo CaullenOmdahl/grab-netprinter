@@ -3,7 +3,7 @@
 ## Problem
 
 GrabMerchant only supports receipt printing over **Bluetooth** (its own cloud printer aside).
-The cafe has a **network** ESC/POS printer. The POS runs Bliss OS 17.2 (Android 14 x86_64) where
+The POS terminal has a **network** ESC/POS printer and runs Android 14 (Android-x86, x86_64) where
 the Android Bluetooth HAL (`android.hardware.bluetooth.IBluetoothHci/default`) is not present in
 the VINTF manifest, so enabling Bluetooth crash-loops `com.android.bluetooth`. Even with a working
 BT stack, no userspace trick can make a remote peripheral appear to the local stack.

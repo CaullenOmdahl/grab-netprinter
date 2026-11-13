@@ -35,7 +35,7 @@ fi
 adb_dev shell 'rm -f /data/local/tmp/grab-netprinter.conf /data/local/tmp/grab-netprinter.log*' 2>/dev/null || true
 
 if [ "$ALL" -eq 1 ]; then
-  log "disabling every non-core module (ZygiskNext, LSPosed, ...) except blacksheep-* and grab-*"
+  log "disabling every non-core module (ZygiskNext, LSPosed, ...) except grab-*"
   adb_dev shell 'for d in /data/adb/modules/*/; do id=$(basename "$d"); case "$id" in grab-netprinter) continue;; esac; touch "${d}disable"; echo "disabled $id"; done'
 fi
 

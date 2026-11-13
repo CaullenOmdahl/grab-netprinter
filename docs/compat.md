@@ -6,8 +6,9 @@ yet — commands and expected outputs are written so a deployer can execute and 
 Paragraphs marked **[EXPECTED]** are inferences that must be confirmed on the device; everything
 else was read directly out of the artifact, the project's source, or official KernelSU docs.
 
-Target: Bliss OS 17.2 "Zenith", Android 14 (SDK 34), x86_64, `userdebug`, SELinux **permissive**,
-**KernelSU 0.9.2**, no Zygisk, no LSPosed, `adb root` works, POS address `192.168.1.100`.
+Reference device: Android 14 (SDK 34), x86_64, Android-x86, `userdebug`, SELinux **permissive**,
+**KernelSU 0.9.2**, no Zygisk, no LSPosed, `adb root` works. `192.168.1.100:5555` below is a
+placeholder device address.
 
 What gets installed (module ids matter for enable/disable/uninstall):
 
@@ -31,7 +32,7 @@ LSPosed and Vector together (both own `/data/adb/lspd`). Fallbacks are in §10.
    reboot → verify → install module APK. This isolates a bad module. The minimal path (install
    both, one reboot) is in §3B and matches the spec's "one reboot", but on first bring-up the
    2-reboot path is safer.
-3. The POS has other modules (`an unrelated vendor module`). Do not touch them.
+3. The device may have unrelated vendor modules; do not touch them.
 4. KernelSU 0.9.2 uses a **staged image**: modules installed with `ksud module install` are held
    in `/data/adb/ksu/modules_update.img` and only become live on the next boot. `ksud module list`
    prints JSON for **live** modules only, so right after install it may still show only the old
@@ -44,7 +45,7 @@ LSPosed and Vector together (both own `/data/adb/lspd`). Fallbacks are in §10.
 ## 1. Preflight (read-only, run all of it before pushing anything)
 
 ```sh
-adb connect 192.168.1.100
+adb connect <device>:5555
 adb devices -l
 adb root                 # restarts adbd as root on userdebug; harmless, expected
 adb wait-for-device
@@ -327,8 +328,8 @@ If the manager opens but shows "LSPosed is not running", the daemon failed to st
 ```sh
 adb logcat -c                                   # clear, then exercise the app
 adb logcat -s LSPosed-Bridge                    # XposedBridge.log() output (tag verified in LSPosed XposedBridge.java)
-adb logcat -d | grep -iE 'grabnetprinter|gnp|blacksheep' | tail -50
-adb shell 'cat /data/local/tmp/grab-netprinter.log' 2>/dev/null | tail -50   # module's own log file (SPEC)
+adb logcat -d | grep -iE 'grabnetprinter|gnp' | tail -50
+adb shell 'cat /data/local/tmp/grab-netprinter.log' 2>/dev/null | tail -50   # module's own log file
 ```
 
 Also, in the LSPosed manager: **Logs** tab (module log/verbose log files listed in §5). A loaded
@@ -365,7 +366,7 @@ status. ZygiskNext's `uninstall.sh` and LSPosed's `uninstall.sh` clean `/data/ad
 KernelSU 0.9.2's `ksud module ...` commands refuse to run while `sys.boot_completed != 1`, but
 `/data/adb/modules` is already mounted early. So with adb:
 ```sh
-adb connect 192.168.1.100
+adb connect <device>:5555
 adb root
 adb shell 'touch /data/adb/modules/zygisksu/disable /data/adb/modules/zygisk_lsposed/disable'
 adb reboot
@@ -378,9 +379,9 @@ guaranteed.
 KernelSU's built-in safe mode disables **all** modules; per official KernelSU docs you trigger it
 by pressing **Volume Down 3 times (press-release, not hold)** right after the first boot screen,
 before the boot animation (the kernel unregisters the volume-key listener at `on_post_fs_data`).
-Caveats for this POS: the safe mode is implemented in the kernel and **non-GKI kernels (Bliss'
-"zenith" kernel) may not have the required integration**, and a POS terminal may have **no
-physical volume keys at all**. So: know §9C, but do not plan on 9D. If safe mode does trigger,
+Caveats for this device: the safe mode is implemented in the kernel and **non-GKI vendor kernels
+may not have the required integration**, and some devices may have **no physical volume keys at
+all**. So: know §9C, but do not plan on 9D. If safe mode does trigger,
 all modules (including `an unrelated vendor module`) are disabled and must be re-enabled afterwards in the
 KernelSU manager.
 
@@ -436,8 +437,8 @@ TaiChi, LSPatch) are documented in `research/compat/artifacts.md` §5.
 2. **Emulator-like props / WSA.** No emulator/WSA/AVD gate was found in the shipped install
    scripts or module props — LSPosed does not refuse to run because `ro.kernel.qemu` is set. The
    real Android-x86 risk is the *target app* (Grab) mis-detecting an emulator, which is an
-   app-level concern, not an LSPosed blocker. Bliss OS itself ships KernelSU, and the Bliss
-   maintainer has documented LSPosed + ZygiskNext on Bliss (15.8 / 16) working.
+   app-level concern, not an LSPosed blocker. Some Android-x86 images ship KernelSU, and community reports confirm
+   LSPosed + ZygiskNext working on recent Android-x86 builds.
 3. **`unshare` must exist.** Both LSPosed's and Vector's `service.sh` start the daemon inside
    `unshare --propagation slave -m …` (Android 14 toybox has it). Verify `which unshare`; if it
    is missing the daemon never starts (symptom: no `lspd` process, nothing in
@@ -473,7 +474,7 @@ TaiChi, LSPatch) are documented in `research/compat/artifacts.md` §5.
 
 ```sh
 # --- preflight -------------------------------------------------------------
-adb connect 192.168.1.100
+adb connect <device>:5555
 adb root && adb wait-for-device && adb shell id
 adb shell getprop ro.build.version.sdk                 # 34
 adb shell getprop ro.product.cpu.abilist               # x86_64 in list

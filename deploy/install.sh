@@ -10,8 +10,8 @@
 # on a device with ZygiskNext live it continues with LSPosed/our module; on a fresh
 # device it stages ZygiskNext and tells you to reboot and re-run.
 #
-# Why the phases: KernelSU 0.9.2 stages module installs in modules_update.img. On this
-# Bliss image, staging ZygiskNext together with other modules (or in a batch after it)
+# Why the phases: KernelSU 0.9.2 stages module installs in modules_update.img. On the
+# reference Android-x86 image, staging ZygiskNext together with other modules (or in a batch after it)
 # lost its payload on the next boot (only module.prop remained), which broke Zygisk and
 # LSPosed. Installing ZygiskNext on its own, then everything else, was reliable.
 #

@@ -1,10 +1,10 @@
 # Prerequisite artifacts — Zygisk + Xposed framework
 
-**Target:** POS terminal — Bliss OS 17.2 "Zenith", Android 14 (SDK 34), x86_64, userdebug,
-SELinux permissive, **KernelSU 0.9.2** (`/data/adb/ksud`), **no Zygisk, no LSPosed**.
-**Researched:** 2026-11-13 from the Mac (GitHub API + release assets downloaded and inspected
+**Reference device:** Android 14 (SDK 34), x86_64, Android-x86, userdebug, SELinux permissive,
+**KernelSU 0.9.2** (`/data/adb/ksud`), **no Zygisk, no LSPosed**.
+**Researched:** from a development workstation (GitHub API + release assets downloaded and inspected
 with `unzip`, `file`, `apkanalyzer`, `apksigner`, and by reading the module install scripts and
-KernelSU 0.9.2 source). **Device was not probed** (192.168.1.100 was not reachable from the
+KernelSU 0.9.2 source). **The reference device was not probed** (not reachable from the
 research session); all device-version claims below are derived from the official KernelSU 0.9.2
 release + source and must be confirmed on-device with the preflight in `docs/compat.md`.
 
@@ -57,7 +57,7 @@ module id `zygisksu` with ZygiskNext, and Vector disables `zygisk_lsposed`.
 | NeoZygisk v2.4 | `lib/x86_64/{libzygisk.so,libzygisk_ptrace.so}`, `bin/x86_64/zygiskd` | same, x86-64 |
 
 Each zip also carries the 32-bit x86 equivalents (`lib/x86/...`, `bin/x86/...`); the installers
-extract both when `ro.product.cpu.abilist32` is non-empty, so a mixed x86/x86_64 Bliss userspace
+extract both when `ro.product.cpu.abilist32` is non-empty, so a mixed x86/x86_64 userspace
 is covered.
 
 **ZygiskNext v1.5.3** — `module.prop`: `id=zygisksu`, `version=1.5.3 (880-22a1bf5-release)`,
@@ -201,14 +201,14 @@ notification/`action.sh`, not the KernelSU WebUI. (ZygiskNext itself does ship a
    `docs/compat.md`). If the installer prints "ksud version is too old"/"KernelSU version is too
    old", stop — do not force-install.
 2. **KernelSU sepolicy check.** ZygiskNext (and NeoZygisk) run `check_sepolicy` during install
-   and abort if the kernel can't apply the rules. Bliss' non-GKI "zenith" kernel may or may not
+   and abort if the kernel can't apply the rules. The non-GKI reference kernel may or may not
    accept every rule. SELinux is permissive, so the rules are not needed for hooks to run, but
    the installer's abort is. See `docs/compat.md` for the mitigation/escalation path.
 3. **ZygiskNext needs a working 64-bit zygote** (`x86_64` userspace). Confirm
    `ro.product.cpu.abilist` contains `x86_64` and a `zygote64` process exists.
 4. **Boot-time helpers.** LSPosed/Vector start their daemon from `service.sh` inside
    `unshare --propagation slave -m …`; Android 14 toybox supports this, but verify `unshare`
-   exists on Bliss (`which unshare`).
+   exists on the device (`which unshare`).
 5. **Recovery.** KernelSU's kernel-side safe mode (press Volume Down 3× after the first boot
    screen; listener removed at `on_post_fs_data`) requires non-GKI kernel integration and
    physical volume keys — a POS terminal may have neither. Treat the adb-based

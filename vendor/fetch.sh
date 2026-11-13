@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # fetch.sh — download the exact prerequisite module zips for grab-netprinter.
 #
-# Target device: Bliss OS 17.2 "Zenith" (Android 14 / SDK 34, x86_64),
+# Reference device: Android 14 (SDK 34, x86_64), Android-x86,
 # KernelSU 0.9.2, SELinux permissive, no Zygisk, no LSPosed.
 #
 # Idempotent: an existing file whose sha256 matches is left untouched.

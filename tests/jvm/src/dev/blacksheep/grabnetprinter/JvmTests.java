@@ -14,7 +14,7 @@ import java.util.List;
 
 /**
  * Offline (JVM) tests for the platform-independent parts of GrabNetPrinter:
- * config parsing and the TCP bridge. No Android classes are touched, so this runs on the Mac.
+ * config parsing and the TCP bridge. No Android classes are touched, so this runs on a plain JVM.
  *
  * <p>Config.loadFrom(String) is a small testability hook; invoked reflectively so the tests also
  * compile against a version of Config that only has load().</p>

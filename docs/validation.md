@@ -1,6 +1,6 @@
 # Validation evidence
 
-Reference environment: Bliss OS 17.2 (Android 14, x86_64) POS terminal rooted with KernelSU, plus
+Reference environment: Android 14 (x86_64) Android-x86 POS terminal rooted with KernelSU, plus
 LSPosed over Zygisk. Addresses and device identifiers in this document are placeholders.
 
 ## Build & artifact checks
