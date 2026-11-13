@@ -29,10 +29,14 @@ legacy-file=…`).
 | Protocol | `protocol` | `raw` | `lpd`/`ipp` reserved (currently falls back to raw) |
 | Log path | `log` | `/data/local/tmp/grab-netprinter.log` | empty disables file logging |
 
-Buttons: **Save** (persists prefs, then writes the per-target config file and legacy file via one
-root command), **Test connection** (TCP connect), **Restart target app** (root `am force-stop`,
-reopens `com.grab.merchant` when that is the target), **Open LSPosed**, and an optional
-**Write legacy config file (root)**.
+Buttons: **Save** (persists prefs, records a pending config, then writes the per-target config file
+and legacy file via one root command), **Test connection** (TCP connect), **Restart target app**
+(root `am force-stop`, reopens `com.grab.merchant` when that is the target), **Open LSPosed**, and an
+optional **Write legacy config file (root)**.
+
+If root is not granted to the settings app, **Save** still records the configuration as a pending
+file; the optional KernelSU/Magisk support module applies it to the target app(s) at the next boot
+(so a reboot, rather than a root prompt, is the fallback).
 
 ## Manual / file configuration
 

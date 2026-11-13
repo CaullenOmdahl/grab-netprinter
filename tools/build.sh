@@ -81,8 +81,8 @@ DIST_DIR="$ROOT/dist"
 
 MIN_SDK=27
 TARGET_SDK=34
-APP_VERSION_NAME="${APP_VERSION_NAME:-1.1.0}"
-APP_VERSION_CODE="${APP_VERSION_CODE:-2}"
+APP_VERSION_NAME="${APP_VERSION_NAME:-1.1.1}"
+APP_VERSION_CODE="${APP_VERSION_CODE:-3}"
 ZIP="${ZIP:-zip}"
 
 # ------------------------------------------------------------------ helpers ---

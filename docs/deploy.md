@@ -48,7 +48,8 @@ Open the **GrabNetPrinter** app from the launcher. Set:
 - **Target packages**: the package whose scope you enabled.
 
 Press **Save** (a root prompt appears once; the config is written into the target app's private
-files dir) and then **Restart target app**. Details and all keys: [configuration.md](configuration.md).
+files dir) and then **Restart target app**. If root is denied, the settings app records the config
+as pending and the optional support module applies it on the next boot. Details and all keys: [configuration.md](configuration.md).
 If the device is not rooted in a way that grants the module app su, write the legacy config file
 instead (see configuration.md) — the hook has a file fallback.
 

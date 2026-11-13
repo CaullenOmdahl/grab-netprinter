@@ -11,6 +11,14 @@ chmod 0644 "$DST" 2>/dev/null
 touch "$LOG" 2>/dev/null
 chmod 0666 "$LOG" 2>/dev/null
 
+# Apply a pending configuration written by the settings app (no root needed there).
+PENDING=/data/data/dev.blacksheep.grabnetprinter/files/pending-gnp.conf
+if [ -f "$PENDING" ]; then
+  cp -f "$PENDING" "$DST" 2>/dev/null
+  chmod 0644 "$DST" 2>/dev/null
+  rm -f "$PENDING" 2>/dev/null
+fi
+
 # Seed per-target-app config files if the settings screen has not done so yet.
 targets=$(grep '^targets=' "$DST" 2>/dev/null | head -1 | cut -d= -f2 | tr ',;' '  ')
 for pkg in $targets; do

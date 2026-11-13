@@ -109,20 +109,25 @@ other modules (or before them) lost its payload on the next boot (only `module.p
 Installing the Zygisk provider alone, rebooting, then installing the rest was reliable; this is
 documented in [troubleshooting.md](troubleshooting.md) and automated by `deploy/install.sh`.
 
-## Build 1.1: settings UI and config delivery
+## Build 1.1.x: settings UI and config delivery
 
 Build 1.1 adds the settings screen and the per-target config file channel (see
 [configuration.md](configuration.md)). Offline verification: 39/39 artifact checks, 46/46 JVM
 tests, including override-precedence tests.
 
-Deployed and verified on the reference terminal:
+Deployed and verified on the reference terminal (build 1.1.1):
 
-- the optional support module (v1.1) seeded `<target app>/files/gnp.conf` at boot
-  (owned by the target app's uid, mode 0600);
-- after restarting the target app, the hook logged
-  `config sources: target-file=10 settings-provider=0 legacy-file=10` and
-  `GNP: hooks installed targets=com.grab.merchant printer=...:9100` — i.e. configuration was read
-  from the target app's own file, with no root or SELinux special-casing at read time;
+- the optional support module seeded `<target app>/files/gnp.conf` at boot (owned by the target
+  app's uid, mode 0600);
+- the settings screen was used **without granting it root**: pressing Save recorded the config as a
+  pending file and reported that the support module would apply it; after a reboot the pending file
+  was consumed, both config files had all 11 keys including `discovery_broadcast`, and the hook
+  logged
+  `config sources: target-file=11 settings-provider=0 legacy-file=11` and
+  `GNP: hooks installed targets=com.grab.merchant printer=...:9100` — configuration is read from
+  the target app's own file, with no root or SELinux special-casing at read time;
+- with root granted to the settings app the same configuration is applied immediately (root command
+  writes the files and the extra root-only actions become available);
 - the print path (`BluetoothHooks` / `SocketBridge`) is unchanged from build 1.0, whose end-to-end
-  test printed a receipt (1045 bytes forwarded). The 1.1 hook also keeps the legacy-file fallback, so
-  existing file-configured deployments continue to work unchanged.
+  test physically printed a receipt (1045 bytes forwarded over TCP). The 1.1 hook keeps the legacy
+  file fallback, so existing file-configured deployments continue to work unchanged.

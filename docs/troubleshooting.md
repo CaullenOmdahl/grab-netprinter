@@ -111,6 +111,23 @@ adb shell 'cat /data/adb/zygisksu/modules_info'    # expect "zygisk_lsposed 64 .
 # then stage LSPosed + grab-netprinter and reboot again
 ```
 
+## Support module update did not take effect (KernelSU 0.9.x)
+
+On some Android-x86 images with KernelSU 0.9.x, `ksud module install` of **an update to an already
+installed module** stages the payload into `modules_update.img` but the merge at boot does not replace
+the live files (the module still reports the old version, and new scripts do not run). If an update
+seems ignored, either update through the KernelSU Manager app, or replace the live module files
+directly (root):
+
+```bash
+adb push module/post-fs-data.sh module/service.sh module/module.prop /data/local/tmp/upd/
+adb shell su -c 'cp -f /data/local/tmp/upd/* /data/adb/modules/grab-netprinter/; \
+  chmod 0755 /data/adb/modules/grab-netprinter/*.sh'
+adb reboot
+```
+
+The same quirk is why `deploy/install.sh` installs the Zygisk provider alone before staging the rest.
+
 ## Zygisk/LSPosed problems
 
 - `ls /data/adb/modules` should list the Zygisk module and LSPosed. If they are there but LSPosed

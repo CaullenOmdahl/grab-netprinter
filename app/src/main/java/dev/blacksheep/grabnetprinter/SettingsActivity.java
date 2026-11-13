@@ -169,8 +169,29 @@ public final class SettingsActivity extends Activity {
             return;
         }
         SettingsStore.save(this, s);
-        status("Saved. Applying to target app(s) via root ...");
+        writePendingConfig(s);
+        status("Saved. Applying to target app(s) ...");
         applyToTargets(s);
+    }
+
+    /**
+     * Writes the configuration to a pending file in this app's private storage. If root is not
+     * granted, the optional KernelSU/Magisk support module imports this file at the next boot and
+     * pushes it to the target app(s) — so changing settings never strictly requires root.
+     */
+    private void writePendingConfig(SettingsStore.Settings s) {
+        try {
+            File pending = new File(getFilesDir(), "pending-gnp.conf");
+            OutputStream out = new FileOutputStream(pending);
+            try {
+                out.write(SettingsStore.toConfigText(s).getBytes(StandardCharsets.UTF_8));
+                out.flush();
+            } finally {
+                out.close();
+            }
+        } catch (Throwable ignored) {
+            // root apply still works; pending file is only a fallback
+        }
     }
 
     /**
@@ -250,8 +271,9 @@ public final class SettingsActivity extends Activity {
                     message = "Saved, but no installed target app matched "
                             + s.targets.trim() + ". Check the package name and LSPosed scope.";
                 } else {
-                    message = "Saved, but applying via root failed (no root?). Grant root to "
-                            + "GrabNetPrinter in KernelSU/Magisk and press Save again.";
+                    message = "Saved. Root was not available, so the configuration is pending: "
+                            + "install/keep the optional support module and reboot to apply it "
+                            + "(or grant root to GrabNetPrinter and press Save again).";
                 }
                 runOnUiThread(new Runnable() {
                     @Override
