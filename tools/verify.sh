@@ -23,7 +23,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 cd "$ROOT"
 
-ANDROID_SDK="${ANDROID_SDK:-$HOME/Library/Android/sdk}"
+ANDROID_SDK="${ANDROID_SDK:-${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}}}"
 BUILD_TOOLS="${BUILD_TOOLS:-$ANDROID_SDK/build-tools/35.0.0}"
 AAPT2="$BUILD_TOOLS/aapt2"
 APKSIGNER="$BUILD_TOOLS/apksigner"

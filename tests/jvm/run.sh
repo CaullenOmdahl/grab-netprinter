@@ -6,8 +6,26 @@
 set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 OUT="$ROOT/tests/jvm/build"
-JAVAC=${JAVAC:-/opt/homebrew/opt/openjdk@17/bin/javac}
-JAVA=${JAVA:-/opt/homebrew/opt/openjdk@17/bin/java}
+# Resolve a JDK portably (macOS Homebrew, Linux CI with JAVA_HOME, or PATH).
+if [ -z "${JAVAC:-}" ] || [ ! -x "${JAVAC:-}" ]; then
+  if [ -n "${JAVA_HOME:-}" ] && [ -x "$JAVA_HOME/bin/javac" ]; then
+    JAVAC="$JAVA_HOME/bin/javac"
+  elif [ -x /opt/homebrew/opt/openjdk@17/bin/javac ]; then
+    JAVAC=/opt/homebrew/opt/openjdk@17/bin/javac
+  else
+    JAVAC=$(command -v javac || true)
+  fi
+fi
+if [ -z "${JAVA:-}" ] || [ ! -x "${JAVA:-}" ]; then
+  if [ -n "${JAVA_HOME:-}" ] && [ -x "$JAVA_HOME/bin/java" ]; then
+    JAVA="$JAVA_HOME/bin/java"
+  elif command -v java >/dev/null 2>&1; then
+    JAVA=$(command -v java)
+  else
+    JAVA="$(dirname "$JAVAC")/java"
+  fi
+fi
+[ -x "$JAVAC" ] || { echo "javac not found; set JAVA_HOME" >&2; exit 1; }
 
 rm -rf "$OUT"
 mkdir -p "$OUT/classes"

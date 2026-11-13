@@ -57,7 +57,7 @@ cd "$ROOT"
 
 # --------------------------------------------------------------- settings ---
 JAVA_HOME="${JAVA_HOME:-/opt/homebrew/opt/openjdk@17}"
-ANDROID_SDK="${ANDROID_SDK:-$HOME/Library/Android/sdk}"
+ANDROID_SDK="${ANDROID_SDK:-${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}}}"
 BUILD_TOOLS="${BUILD_TOOLS:-$ANDROID_SDK/build-tools/35.0.0}"
 ANDROID_JAR="${ANDROID_JAR:-$ANDROID_SDK/platforms/android-34/android.jar}"
 
