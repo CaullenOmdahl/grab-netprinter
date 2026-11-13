@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  GNP-DIAG — on-device assumption checker for GrabNetPrinter.
+
+  Separate, deliberately tiny app (no resources, one launcher activity).
+  It runs the diagnostic steps B1..B9 on a background thread, writes one
+  logcat line per step under tag GNP-DIAG, then finishes.
+
+  Build:  tools/build.sh diag      -> dist/gnp-diag.apk
+  Run:    adb install -r dist/gnp-diag.apk
+          adb shell am start -n dev.blacksheep.grabnetprinter.diag/.DiagActivity
+          adb logcat -s GNP-DIAG
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="dev.blacksheep.grabnetprinter.diag">
+
+    <uses-sdk
+        android:minSdkVersion="27"
+        android:targetSdkVersion="34" />
+
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Only needed for discovery on Android <= 11; declared for maxSdk 30. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
+
+    <application
+        android:label="GNP Diag"
+        android:allowBackup="false"
+        android:usesCleartextTraffic="true">
+
+        <activity
+            android:name=".DiagActivity"
+            android:label="GNP Diag"
+            android:exported="true"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

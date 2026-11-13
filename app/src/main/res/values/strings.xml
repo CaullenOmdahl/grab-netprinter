@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GrabNetPrinter</string>
+    <!-- Kept in sync with the xposeddescription manifest meta-data. -->
+    <string name="xposed_description">Make a LAN ESC/POS printer appear as a bonded Bluetooth SPP printer to GrabMerchant</string>
+</resources>

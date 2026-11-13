@@ -1,0 +1,42 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: |
+          sdkmanager --install "platforms;android-34" "build-tools;35.0.0"
+          sudo apt-get update
+          sudo apt-get install -y zip unzip curl
+
+      - name: Build
+        run: tools/build.sh
+
+      - name: Verify artifacts
+        run: tools/verify.sh
+
+      - name: Offline tests
+        run: tests/jvm/run.sh
+
+      - name: Upload APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: grabnetprinter
+          path: |
+            dist/GrabNetPrinter.apk
+            dist/gnp-diag.apk
+            dist/grab-netprinter-*.zip

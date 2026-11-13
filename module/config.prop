@@ -1,0 +1,23 @@
+# GrabNetPrinter - optional support module configuration.
+#
+# The settings app is the primary way to configure the module. This file is only
+# a seed for managed/headless deployments: at boot the module copies it to
+# /data/local/tmp/grab-netprinter.conf and to <target app>/files/gnp.conf when
+# those files do not exist yet (existing files are never overwritten).
+
+enabled=1
+targets=com.grab.merchant
+
+# Network ESC/POS printer, e.g. 192.168.1.50:9100
+printer_host=
+printer_port=9100
+protocol=raw
+
+# Fake Bluetooth identity shown to the target app (any valid unicast MAC works).
+fake_mac=02:00:00:00:00:01
+fake_name=LAN Printer
+
+# 1 = answer Bluetooth discovery scans, 0 = paired list only.
+discovery=1
+debug=0
+log=/data/local/tmp/grab-netprinter.log

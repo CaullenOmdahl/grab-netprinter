@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  GrabNetPrinter — Xposed/LSPosed module APK with a small settings UI.
+
+  The module is discovered by LSPosed via the xposedmodule / xposedminversion /
+  xposedscope meta-data below plus the assets/xposed_init entry point file.
+  The settings activity stores the configuration; ConfigProvider exposes only the
+  keys the user saved to the hooked target app (read-only, no root required).
+
+  versionCode/versionName are supplied by the build:
+    - tools/build.sh passes the version code and name to aapt2 link
+    - Gradle (IDE only) sets them in app/build.gradle.kts defaultConfig
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="dev.blacksheep.grabnetprinter">
+
+    <!-- minSdk 27 (Android 8.1) — the POS runs Android 14 (SDK 34). -->
+    <uses-sdk
+        android:minSdkVersion="27"
+        android:targetSdkVersion="34" />
+
+    <!--
+      The module itself does not use Bluetooth: it hooks the *target app's*
+      android.bluetooth classes inside that app's process. These declarations
+      are harmless and only make the APK installable/reviewable on modern
+      Android; the hooked app supplies its own permissions.
+    -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:label="@string/app_name"
+        android:allowBackup="false"
+        android:hasCode="true"
+        android:usesCleartextTraffic="true"
+        android:extractNativeLibs="false">
+
+        <!-- Settings UI (also the launcher entry for the module app) -->
+        <activity
+            android:name=".SettingsActivity"
+            android:label="GrabNetPrinter settings"
+            android:exported="true"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Read-only settings provider consumed by the hooked target app. -->
+        <provider
+            android:name=".ConfigProvider"
+            android:authorities="dev.blacksheep.grabnetprinter.config"
+            android:exported="true"
+            android:grantUriPermissions="false"
+            android:label="GrabNetPrinter configuration" />
+
+        <!-- Xposed / LSPosed module declaration -->
+        <meta-data
+            android:name="xposedmodule"
+            android:value="true" />
+        <meta-data
+            android:name="xposeddescription"
+            android:value="Make a LAN ESC/POS printer appear as a bonded Bluetooth SPP printer to GrabMerchant" />
+        <meta-data
+            android:name="xposedminversion"
+            android:value="93" />
+        <!-- Scoped to the GrabMerchant process only (see res/values/arrays.xml) -->
+        <meta-data
+            android:name="xposedscope"
+            android:resource="@array/xposed_scope" />
+    </application>
+</manifest>

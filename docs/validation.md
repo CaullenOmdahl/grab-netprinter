@@ -1,0 +1,128 @@
+# Validation evidence
+
+Reference environment: Bliss OS 17.2 (Android 14, x86_64) POS terminal rooted with KernelSU, plus
+LSPosed over Zygisk. Addresses and device identifiers in this document are placeholders.
+
+## Build & artifact checks
+
+```
+tools/build.sh   -> dist/GrabNetPrinter.apk   (49,619 B)
+                    dist/grab-netprinter-1.1.zip (4,091 B)
+                    dist/gnp-diag.apk          (16,787 B)
+tools/verify.sh  -> 39 checks passed, 0 failed
+tests/jvm/run.sh -> 46 passed, 0 failed, 0 skipped
+```
+
+`tools/verify.sh` covers: APK package/version/label, Xposed meta-data (`xposedmodule`,
+`xposeddescription`, `xposedminversion`, `xposedscope`), the settings launcher activity, the
+read-only config provider authority, `assets/xposed_init`, packaged dex, absence of packaged Xposed
+API classes, APK signatures, the module zip layout (`module.prop` at the zip root) and the
+diagnostic APK.
+
+`tests/jvm/run.sh` compiles the platform-independent classes against a JVM stub and checks config
+parsing (comments, defaults, invalid MAC, `enabled=0`), override merging (settings over file),
+TCP bridge round-trip/flush/close/EOF and connect-failure semantics, protocol mapping and the log
+helpers.
+
+## Android 14 API assumptions
+
+Checked against AOSP `android-14.0.0_r1` sources:
+
+| Assumption | Reality |
+|---|---|
+| `BluetoothClass.CREATOR.createFromParcel` reads one int | Confirmed. `hashCode()` returns `mClass`; `getMajorDeviceClass()` = `mClass & 0x1F00` (IMAGING 0x0600); `getDeviceClass()` = `mClass & 0x1FFC` (PRINTER 0x0680). The parcel trick therefore produces exactly the class values the target filter checks. |
+| `BluetoothDevice` has `mAddress` and public address/name/bond/uuid/class getters | Confirmed; its constructors are package-private, so `adapter.getRemoteDevice(mac)` (public) is the primary creation path. |
+| `BluetoothSocket` is a final class with hookable `connect/close/isConnected/getOutputStream/...` | Confirmed. |
+| `BluetoothAdapter.getDefaultAdapter()` is non-null when BluetoothManagerService exists | Confirmed (reads the `bluetooth_manager` binder; does not require a working BT HAL). |
+| `android.app.ContextImpl.registerReceiverInternal(BroadcastReceiver,int,IntentFilter,String,Handler,Context,int)` exists for discovery injection | Confirmed; receivers are matched by parameter type. |
+
+## Target-app facts
+
+The module was developed and hardened against GrabMerchant 4.196.0 (Flutter; targetSdk 36). Its
+bundled printer libraries use the classic SPP path:
+
+- paired-printer filter: `BluetoothAdapter.getBondedDevices()` → `getBluetoothClass()` must report
+  major 0x0600 / device 0x0680 and `getUuids()` must be non-null;
+- connect flow: `createRfcommSocketToServiceRecord(uuid)` → `connect()` → `getOutputStream()`, with a
+  reflective `createRfcommSocket(1)` fallback after `IOException`;
+- discovery: receivers for `ACTION_FOUND` / `ACTION_UUID` / `ACTION_DISCOVERY_FINISHED` after
+  `startDiscovery()`.
+
+Every relevant path goes through `android.bluetooth.*`, which is what the hooks intercept. Other POS
+apps with the same print pipeline work by adding their package to the settings.
+
+## Device facts of the reference terminal
+
+- Android 14 / SDK 34, x86_64, userdebug, SELinux **permissive**, `adb root` available,
+  KernelSU 0.9.2.
+- Bluetooth hardware existed, but the Android BT HAL was not present in the VINTF manifest and
+  `com.android.bluetooth` crash-looped — which is what motivated faking the printer in-process
+  instead of relying on the real stack.
+- Network printer: raw ESC/POS on TCP 9100; a `DLE EOT 1` status query answered `0x16`.
+
+## Root prerequisites (see compat.md)
+
+`zygisknext-v1.5.3.zip` (`zygisksu`) + `lsposed-v1.11.0-zygisk.zip` (`zygisk_lsposed`): both include
+real x86_64 payloads, declare Android 8.1–16 support, install as Magisk/KernelSU modules and satisfy
+KernelSU 0.9.2's version gates. Checksums and fallbacks (NeoZygisk, Vector) are pinned in
+`docs/compat.md`; the zips are not redistributed.
+
+## On-device diagnostic run
+
+`dist/gnp-diag.apk` on the reference terminal:
+
+```
+STEP=B1 OK adapter=android.bluetooth.BluetoothAdapter
+STEP=B2 OK address=02:00:00:00:00:01 bondState=10 (expect 10=none) uuids=null
+STEP=B3 OK class=680 major=0x600 device=0x680 hashCode=1664
+STEP=B4 OK unsafe=sun.misc.Unsafe instance=android.bluetooth.BluetoothSocket
+STEP=B5 OK isConnected=false
+STEP=B6 OK reply=0x16          (DLE EOT 1 status query to the printer)
+STEP=B7 ERR SecurityException: not allowed to send broadcast ...FOUND
+STEP=B8 OK count=0
+STEP=B9 OK enabled=true state=12
+```
+
+Key outcomes: the BluetoothClass trick yields exactly the values the target filter requires;
+`Unsafe.allocateInstance(BluetoothSocket.class)` works; the printer is reachable; and sending
+`ACTION_FOUND` is blocked (protected broadcast), confirming that direct receiver injection — not
+broadcast spoofing — is the correct discovery design.
+
+## End-to-end deployment (build 1.0.x)
+
+Deployed to the reference terminal (ZygiskNext + LSPosed + module APK, scope enabled for the target
+app):
+
+- hooks installed inside GrabMerchant (`GNP: hooks installed ...`), and re-installed on every app
+  start (verified across restarts);
+- the target app listed **"LAN Printer"** in its Bluetooth printer search, accepted it
+  (`"Setup successful"`), and showed it as connected;
+- a test receipt was forwarded: `TCP connected ...` then
+  `TCP closed <printer>:9100 after 1045 bytes`, and the receipt physically printed;
+- the LSPosed manager listed GrabNetPrinter as an enabled module.
+
+### KernelSU 0.9.2 staging quirk
+
+On this Android-x86 image, staging the Zygisk provider in the same `ksud module install` batch as
+other modules (or before them) lost its payload on the next boot (only `module.prop` survived,
+`zygiskd` missing, LSPosed logging `no response from bridge` / `System server injection fails`).
+Installing the Zygisk provider alone, rebooting, then installing the rest was reliable; this is
+documented in [troubleshooting.md](troubleshooting.md) and automated by `deploy/install.sh`.
+
+## Build 1.1: settings UI and config delivery
+
+Build 1.1 adds the settings screen and the per-target config file channel (see
+[configuration.md](configuration.md)). Offline verification: 39/39 artifact checks, 46/46 JVM
+tests, including override-precedence tests.
+
+Deployed and verified on the reference terminal:
+
+- the optional support module (v1.1) seeded `<target app>/files/gnp.conf` at boot
+  (owned by the target app's uid, mode 0600);
+- after restarting the target app, the hook logged
+  `config sources: target-file=10 settings-provider=0 legacy-file=10` and
+  `GNP: hooks installed targets=com.grab.merchant printer=...:9100` — i.e. configuration was read
+  from the target app's own file, with no root or SELinux special-casing at read time;
+- the print path (`BluetoothHooks` / `SocketBridge`) is unchanged from build 1.0, whose end-to-end
+  test printed a receipt (1045 bytes forwarded). The 1.1 hook also keeps the legacy-file fallback, so
+  existing file-configured deployments continue to work unchanged.
