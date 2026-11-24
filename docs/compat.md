@@ -1,8 +1,10 @@
 # Compat prerequisites — ZygiskNext + LSPosed on the POS terminal (one-time install)
 
 Status: **researched/verified 2026-11-13 from the exact release zips** (`vendor/`, see
-`research/compat/artifacts.md` for sha256 + evidence). Nothing here has been run against the POS
-yet — commands and expected outputs are written so a deployer can execute and verify them.
+`research/compat/artifacts.md` for sha256 + evidence). The install steps have since been used on the
+reference terminal (see [validation.md](validation.md#end-to-end-deployment-build-10x)); only that one
+combination is tested (see the [compatibility matrix](#compatibility-matrix)). Commands and expected
+outputs are written so a deployer can execute and verify them on other devices.
 Paragraphs marked **[EXPECTED]** are inferences that must be confirmed on the device; everything
 else was read directly out of the artifact, the project's source, or official KernelSU docs.
 
@@ -20,6 +22,72 @@ What gets installed (module ids matter for enable/disable/uninstall):
 
 Do **not** install ZygiskNext and NeoZygisk together (both are `id=zygisksu`), and do not install
 LSPosed and Vector together (both own `/data/adb/lspd`). Fallbacks are in §10.
+
+---
+
+## Compatibility matrix
+
+Four categories are kept apart on purpose: what the build **declares**, what has been **tested**,
+what is **untested** (no evidence either way), and what is **out of scope**. "Untested" means
+"not yet covered", not "fails" and not "supported". Evidence for the tested rows is in
+[validation.md](validation.md).
+
+### Declared support (as declared, not tested)
+
+| Item | Declared | Notes |
+|---|---|---|
+| App `minSdk` | 27 (Android 8.1) | From `app/build.gradle.kts`; a build-time floor, not a test result. |
+| Hook mechanism | Java `android.bluetooth.*` via LSPosed | Members resolved by name + parameter types; missing ones are logged and skipped. |
+| Root framework payloads | ZygiskNext v1.5.3 / LSPosed v1.11.0 zips declare Android 8.1-16 | Declaration read from the zips; only Android 14 x86_64 has been exercised. |
+
+### Tested combinations
+
+Only combinations with recorded evidence in [validation.md](validation.md).
+
+| Device | Arch | Android | SELinux | Root / framework | Result |
+|---|---|---|---|---|---|
+| Android-x86 POS terminal (userdebug) | x86_64 | 14 (SDK 34) | permissive | KernelSU 0.9.2, ZygiskNext v1.5.3, LSPosed v1.11.0 | Hooks installed; target app listed and connected the fake printer; receipt physically printed (build 1.0.x); 1.1.1 config delivery verified. |
+
+### Tested target-app versions
+
+| App | Version | Result |
+|---|---|---|
+| GrabMerchant (`com.grab.merchant`) | 4.196.0 | Classic-SPP print flow hooked and a receipt printed. No other version has been tested. |
+
+### Untested / expected (not yet covered)
+
+None of these has been run; no support is claimed and no failure is implied.
+
+| Area | Status |
+|---|---|
+| arm64 (and other ABIs) | Untested. The code is pure Java; the root-framework payloads are ABI-specific. |
+| Enforcing SELinux | Untested. The only run was permissive (see section 11). |
+| Android versions other than 14 | Untested, including the declared floor (8.1). |
+| Magisk, APatch, or KernelSU versions other than 0.9.2 | Untested. |
+| LSPosed / Zygisk providers other than the pinned ones (NeoZygisk, Vector fallbacks) | Untested with this module. |
+| GrabMerchant versions other than 4.196.0 | Untested. |
+| Other POS apps (added through the targets setting) | Untested; expected to work only if they use the same classic-SPP flow. |
+| Paired-printer reconnect after printer power cycle / network drop, reboot persistence | Not yet recorded as a repeatable run; see [validation.md](validation.md#repeatable-validation-procedure). |
+
+### Out of scope (not supported unless implemented and verified)
+
+| Environment | Why |
+|---|---|
+| BLE / GATT printers or apps | Hooks cover the classic RFCOMM socket path only. |
+| NDK / native-code Bluetooth or printing pipelines | Native code bypasses the Java `android.bluetooth.*` hooks. |
+| IPP-only or LPD-only apps and printers | `protocol=lpd`/`ipp` are accepted in config but currently fall back to raw TCP; no verified LPD/IPP transport. |
+| Non-rooted devices / no LSPosed | The module is an LSPosed module; it cannot load without it. |
+| iOS and non-Android platforms | Android only. |
+
+### Update resilience
+
+The hooks sit at `android.bluetooth.*`, so they survive target-app updates only while the app keeps
+using the Java classic-SPP flow (`createRfcommSocketToServiceRecord` -> `connect` ->
+`getOutputStream`, plus the paired-printer class/UUID filter). If an update moves to BLE, native
+code, or another print pipeline, the hooks no longer see the print path and printing breaks until
+the module is changed and re-validated. After any target-app, Android, or root-framework update,
+re-run the procedure in [validation.md](validation.md#repeatable-validation-procedure) and record
+the new combination.
 
 ---
 

@@ -3,7 +3,7 @@
 [![build](https://github.com/CaullenOmdahl/grab-netprinter/actions/workflows/build.yml/badge.svg)](https://github.com/CaullenOmdahl/grab-netprinter/actions/workflows/build.yml)
 [![release](https://img.shields.io/github/v/release/CaullenOmdahl/grab-netprinter)](https://github.com/CaullenOmdahl/grab-netprinter/releases)
 [![license](https://img.shields.io/github/license/CaullenOmdahl/grab-netprinter)](LICENSE)
-[![Android](https://img.shields.io/badge/Android-8.1%2B%20(API%2027)-3DDC84?logo=android&logoColor=white)](#compatibility)
+[![Android](https://img.shields.io/badge/Android-8.1%2B%20declared%20(API%2027)-3DDC84?logo=android&logoColor=white)](#compatibility)
 [![framework](https://img.shields.io/badge/framework-LSPosed-8A2BE2)](#prerequisites)
 
 An LSPosed (Xposed) module that makes a **LAN ESC/POS receipt printer** appear inside a POS/merchant
@@ -38,17 +38,33 @@ Bluetooth printer **inside the target app's process** — no real Bluetooth stac
 hardware emulation — and redirects the print stream to your network printer. The target app keeps
 using its normal "Bluetooth printer" flow; it simply ends up talking to a TCP socket.
 
+## Requirements at a glance
+
+This is not a plain APK install. Before you start you need:
+
+- a **rooted** Android device (Magisk, KernelSU or APatch) with **Zygisk** and **LSPosed** installed
+  and working. This is mandatory; non-rooted or no-LSPosed environments are out of scope;
+- a POS app that prints through the Java classic Bluetooth SPP (RFCOMM) flow;
+- a network printer that accepts raw ESC/POS over TCP (usually port `9100`).
+
+Setup takes several steps (install, LSPosed scope, configure, restart the app); see
+[Installation](#installation).
+
 ## Features
 
 - Fake bonded Bluetooth printer inside the target app (printer-class device, SPP UUID, bonded state).
 - Transparent ESC/POS forwarding to a LAN printer (`host:port`, typically `9100`).
 - Optional Bluetooth discovery injection so the printer also appears in the app's scan screen.
-- Hooks live at the `android.bluetooth.*` API layer, not inside the target app, so app updates keep
-  working and the module is reusable across POS apps.
+- Hooks live at the `android.bluetooth.*` API layer, not inside the target app, so the module does
+  not depend on the app's own code. App updates keep working only while the app keeps using the
+  supported Java classic-SPP (RFCOMM) flow; a move to BLE, native (NDK) code or another print
+  pipeline breaks it (see [Compatibility](#compatibility)).
 - In-app settings screen: printer, fake Bluetooth identity, target packages, discovery/debug toggles,
   TCP **Test connection**, **Restart target app** and **Open LSPosed** shortcuts.
-- Configuration works without root prompts: the settings screen stores a pending config that the
-  optional support module applies at boot; grant root for immediate application.
+- Saving settings does not need a root prompt at that moment: the settings screen stores a pending
+  config that the optional support module applies at boot; grant root for immediate application.
+  The module itself still requires a rooted device with Zygisk + LSPosed; it is not a root-free
+  platform.
 - Optional KernelSU/Magisk support module for managed/headless deployments.
 - Standalone diagnostics APK and offline test suite for the platform-independent code.
 - No telemetry, no background services, no bundled third-party binaries.
@@ -78,12 +94,14 @@ See [docs/architecture.md](docs/architecture.md) for details.
 
 | | |
 |---|---|
-| Android | 8.1+ (API 27+); tested on Android 14 (x86_64) |
+| Android (declared minimum) | 8.1+ (API 27+). This is what the app and modules declare, not a tested range |
+| Tested | Android 14 (x86_64), SELinux permissive, KernelSU + LSPosed, GrabMerchant 4.196.0 |
+| Other combinations | Untested (neither supported nor known-unsupported). See the [compatibility matrix](docs/compat.md#compatibility-matrix) and the [validation procedure](docs/validation.md#repeatable-validation-procedure) to test yours |
 | Root | Magisk, KernelSU (+ ZygiskNext/NeoZygisk) or APatch |
 | Hook framework | LSPosed (Zygisk variant); legacy Xposed API |
 | Target apps | Classic Bluetooth SPP printing. Primary/tested target: GrabMerchant 4.196.0; other POS apps can be added via the `targets` setting |
 | Printers | Raw ESC/POS over TCP (usually port 9100). IPP/LPD-only office printers are not supported |
-| Not supported | BLE-GATT printing, native (NDK) print pipelines, iOS |
+| Out of scope | BLE-GATT printing, native (NDK) print pipelines, IPP/LPD-only printers, non-rooted or no-LSPosed environments, iOS |
 
 Pinned Zygisk/LSPosed builds and known-good combinations are documented in
 [docs/compat.md](docs/compat.md). Those binaries are not redistributed with this project.
@@ -165,7 +183,7 @@ rootless/pending path.
 | Connect fails / no output | **Test connection** in settings; printer IP/port; POS network reachability; module log `TCP connected`/`close` lines |
 | Garbage/partial receipts | Printer must accept raw ESC/POS on that port; wrong port or IPP-only printer is the usual cause |
 | Settings not applied | Press Save, then Restart target app; without root, reboot with the optional support module installed |
-| After an app update | Hooks are framework-level, but re-check the target app's printer flow; see troubleshooting doc |
+| After an app update | Hooks sit at the `android.bluetooth.*` layer, so they only help while the app still uses the Java classic-SPP (RFCOMM) flow; if it moved to BLE, native code or another pipeline, it will stop working. See [troubleshooting](docs/troubleshooting.md#after-the-target-app-updates) |
 
 More: [docs/troubleshooting.md](docs/troubleshooting.md). The optional `gnp-diag.apk` from the
 release validates device-side assumptions and can test printer reachability

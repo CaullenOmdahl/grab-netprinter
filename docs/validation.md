@@ -131,3 +131,84 @@ Deployed and verified on the reference terminal (build 1.1.1):
 - the print path (`BluetoothHooks` / `SocketBridge`) is unchanged from build 1.0, whose end-to-end
   test physically printed a receipt (1045 bytes forwarded over TCP). The 1.1 hook keeps the legacy
   file fallback, so existing file-configured deployments continue to work unchanged.
+
+## Repeatable validation procedure
+
+Run this per combination (device / Android / root framework / target-app version). It is safe on a
+device you already own and operate: it changes no security settings, needs no new accounts or
+hardware, and should not be run against a production POS during trading hours or with live orders.
+Use the app's own test print, not real orders. Any combination without a completed record below stays
+**untested**.
+
+### Per-run checklist
+
+1. **Environment capture** (record all):
+   - device model, ABI (`adb shell getprop ro.product.cpu.abi`), Android release and API level
+     (`ro.build.version.release`, `ro.build.version.sdk`);
+   - SELinux mode: `adb shell getenforce`;
+   - root framework and version (KernelSU / Magisk / APatch), Zygisk provider and version;
+   - LSPosed version (manager or `module.prop`);
+   - GrabNetPrinter build (versionName / versionCode);
+   - target app versionName / versionCode:
+     `adb shell dumpsys package com.grab.merchant | grep -E 'versionName|versionCode'`.
+2. **Paired discovery / bonded devices:** with scope enabled, open the target app's Bluetooth
+   printer search. Expect the fake printer (name/MAC from config) in the list and in the paired
+   list; log shows `hooks installed` and the discovery injection.
+3. **Connect / write / close:** select the printer, run the app's test print. Log should show
+   `TCP connected ...` then `TCP closed ... after N bytes`. Confirm a receipt physically printed.
+4. **Reconnect:** (a) close/reopen the connection and print again; (b) power-cycle the printer and
+   print again; (c) briefly drop the network to the printer (e.g. unplug its LAN cable), confirm a
+   connect failure is reported by the app, restore, print again.
+5. **Configuration change:** change host, port, and/or fake name (settings app or config file),
+   apply, restart the target app, and confirm the new values in the log
+   (`config sources: ...`, `hooks installed targets=... printer=...`) and that a print reaches the
+   new destination.
+6. **Restart behavior:** force-stop and relaunch the target app, print; then reboot the device,
+   wait for boot to complete, relaunch, print.
+7. **Enforcing SELinux** (only if the device is already enforcing): do **not** run
+   `setenforce 0` or otherwise relax policy. Run the steps above as-is and capture denials instead:
+   `adb logcat -d | grep -i 'avc:'` and `adb shell dmesg | grep -i avc`. A failure with AVC denials
+   is a result to record, not something to work around by weakening the device.
+
+### Evidence to record
+
+- Log excerpts for each step (hook install, discovery, TCP connect/close with byte count, config
+  sources, any `GNP` errors), with addresses redacted to placeholders.
+- A photo of the physical receipt for every step that claims printing, or the explicit text
+  "not printed" if nothing came out. An end-to-end claim without receipt evidence is not recorded as
+  passing.
+- Any AVC denials (enforcing devices) or crash/ANR lines.
+
+### Results record template
+
+```
+Date:
+Tester:
+Device / model:
+ABI:                         Android release / API:
+SELinux (getenforce):
+Root framework + version:    Zygisk provider + version:
+LSPosed version:
+GrabNetPrinter versionName/versionCode:
+Target app + versionName/versionCode:
+
+Step                              Result (pass/fail/not run)  Evidence (log / photo / "not printed")
+1 Environment captured
+2 Paired discovery
+3 Connect / write / close
+4a Reconnect after close
+4b Reconnect after printer power cycle
+4c Reconnect after network drop
+5 Configuration change + re-apply
+6a Target-app restart
+6b Device reboot
+7 AVC denials (enforcing only)
+
+Notes / deviations:
+```
+
+A combination is listed as tested in [compat.md](compat.md#compatibility-matrix) only after a
+record like this exists for it. Combinations with no record, or with steps marked "not run", stay
+"untested" / "not yet covered" for those steps. The reference-run evidence above covers steps 2-3
+and 6 on one combination (Android 14 x86_64, permissive); steps 4 and 5 and enforcing-SELinux
+coverage are not yet recorded in this repeatable form.

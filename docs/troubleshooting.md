@@ -146,6 +146,16 @@ The same quirk is why `deploy/install.sh` installs the Zygisk provider alone bef
 - LSPosed v1.11.0 removed KernelSU WebUI; ZygiskNext still has one. KernelSU Manager → Modules →
   Zygisk Next opens its WebUI, an independent Zygisk status check.
 
+## After the target app updates
+
+The hooks are at the `android.bluetooth.*` layer, so an update usually keeps working **as long as the
+app still prints through the Java classic Bluetooth SPP (RFCOMM) flow**. It will stop working if the
+update moves printing to BLE-GATT, native (NDK) code or a different print pipeline; those paths bypass
+the hooks and are out of scope. After an update, force-stop the app, confirm the module startup line
+in `logcat -s GrabNetPrinter`, and check that `LAN Printer` is still listed. Only versions listed in
+the [compatibility matrix](compat.md#compatibility-matrix) have been validated; see the
+[validation procedure](validation.md#repeatable-validation-procedure) to check another build.
+
 ## The POS is slow or GrabMerchant crashes
 
 - Disable the module (LSPosed Manager toggle or `deploy/rollback.sh`), force stop the app.
