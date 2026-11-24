@@ -10,6 +10,12 @@ All notable changes to this project are documented here. The format follows
 - Rewrote the README to an open-source project standard (badges, TOC, compatibility, installation,
   security/privacy, troubleshooting, project layout) and added SECURITY.md, CODE_OF_CONDUCT.md,
   CHANGELOG.md, issue templates, a pull-request template and an .editorconfig.
+- Defined the supported compatibility envelope (issue #1): README now separates the declared
+  minimum (Android 8.1+) from what has been tested, marks other combinations as untested, lists the
+  out-of-scope pipelines, links the compatibility matrix and validation procedure, and adds a
+  "Requirements at a glance" section stating that a rooted device with Zygisk + LSPosed is mandatory.
+- Scoped the "app updates keep working" claim to the Java classic-SPP (RFCOMM) flow and added an
+  "After the target app updates" troubleshooting section.
 - Removed remaining placeholder defaults from the optional deploy scripts.
 
 ## [1.1.1] - 2026-11-13
